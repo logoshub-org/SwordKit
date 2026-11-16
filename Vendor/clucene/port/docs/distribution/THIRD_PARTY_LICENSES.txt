@@ -1,0 +1,227 @@
+CLucene Mobile: binary-package third-party notices
+================================================
+
+Scope
+-----
+This document covers the core/shared binary package and optional highlighter,
+not a complete license inventory of every preserved source-repository file.
+Do not treat it as a blanket license grant or completed legal clearance.
+Keep it with LICENSE-CLucene, NOTICE, and CHANGES.txt when distributing the
+XCFramework. No third-party component is relicensed by this document.
+
+1. CLucene and optional highlighter
+----------------------------------
+The full Apache License, Version 2.0 is provided in LICENSE-CLucene (LICENSE
+in the source repository). Core CLucene source notices offer Apache License
+2.0 or LGPL; the Apache option is selected for this package where offered.
+
+Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team.
+Other authors' copyright notices remain in the source files and headers.
+
+Highlighter source notices include:
+Copyright 2002-2004 The Apache Software Foundation.
+Licensed under the Apache License, Version 2.0.
+The default build excludes highlighter. Its notices apply if it is enabled.
+
+2. GLib-derived Unicode classification and UTF-8 code
+----------------------------------------------------
+Files: src/shared/CLucene/config/gunichartables.cpp and utf8.cpp.
+The following is their shared source notice, reproduced without comment markup:
+
+Copyright (C) 1999 Tom Tromey
+Copyright (C) 2000 Red Hat, Inc.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the
+Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+
+Also licensed with permission from Tom Tromey
+and Owen Taylor under the Apache license.
+Original locations:
+http://cvs.gnome.org/viewcvs/glib/glib/guniprop.c?view=log
+http://cvs.gnome.org/viewcvs/glib/glib/gutf8.c?rev=1.50&view=log
+
+Copyright 2003-2006 The Apache Software Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+This package uses the expressly offered Apache option for that code. The
+GLib-derived software notice is separate from the Unicode data terms below.
+
+3. Gary McNickle / RSA Data Security MD5 implementation
+------------------------------------------------------
+File: src/core/CLucene/util/MD5Digester.cpp.
+The complete original permission notice follows, without comment markup:
+
+MD5.cpp
+Implementation file for MD5 class
+
+This C++ Class implementation of the original RSA Data Security, Inc.
+MD5 Message-Digest Algorithm is copyright (c) 2002, Gary McNickle.
+All rights reserved. This software is a derivative of the "RSA Data
+Security, Inc. MD5 Message-Digest Algorithm"
+
+You may use this software free of any charge, but without any
+warranty or implied warranty, provided that you follow the terms
+of the original RSA copyright, listed below.
+
+Original RSA Data Security, Inc. Copyright notice
+
+Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+rights reserved.
+
+License to copy and use this software is granted provided that it
+is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+Algorithm" in all material mentioning or referencing this software
+or this function.
+License is also granted to make and use derivative works provided
+that such works are identified as "derived from the RSA Data
+Security, Inc. MD5 Message-Digest Algorithm" in all material
+mentioning or referencing the derived work.
+RSA Data Security, Inc. makes no representations concerning either
+the merchantability of this software or the suitability of this
+software for any particular purpose. It is provided "as is"
+without express or implied warranty of any kind.
+These notices must be retained in any copies of any part of this
+documentation and/or software.
+
+4. Unicode character data: historical provenance still to verify
+---------------------------------------------------------------
+File: src/shared/CLucene/config/_gunichartables.h.
+This generated table declares G_UNICODE_DATA_VERSION "4.0". Its wrapper source
+points to UnicodeData.txt and the Unicode copyright page, but does not contain
+the original data license or identify the exact input files used to generate it.
+
+Official investigation starting points:
+https://www.unicode.org/Public/4.0-Update/
+https://www.unicode.org/Public/4.0-Update/ReadMe-4.0.0.txt
+https://www.unicode.org/Public/4.0-Update/UCD-4.0.0.html
+https://www.unicode.org/versions/Unicode4.0.0/
+https://www.unicode.org/copyright.html
+https://www.unicode.org/license.txt
+
+The official 4.0 ReadMe is dated 2003 April 16. It identifies the 4.0.0 data
+release. The release-specific UCD documentation is dated 2003-04-18 and
+contains the historical UCD Terms of Use reproduced below. Investigate the
+original CLucene/GLib source distribution and table generator to confirm the
+exact data inputs. Archived 2003-era Unicode copyright pages and confirmation
+from Unicode, Inc. are additional sources if that provenance remains unclear.
+
+Source attribution: Unicode Character Database, Version 4.0.0, Unicode, Inc.
+The bundled tables declare version 4.0 and are presented as derived Unicode
+character data. This attribution does not claim an exact generator/input match
+has been independently verified.
+
+Historical Unicode 4.0 UCD Terms of Use
+Retrieved 2026-10-12 from:
+https://www.unicode.org/Public/4.0-Update/UCD-4.0.0.html
+
+Disclaimer
+
+The Unicode Character Database is provided as is by Unicode, Inc. No claims are
+made as to fitness for any particular purpose. No warranties of any kind are
+expressed or implied. The recipient agrees to determine applicability of
+information provided. If this file has been purchased on magnetic or optical
+media from Unicode, Inc., the sole remedy for any claim will be exchange of
+defective media within 90 days of receipt.
+
+This disclaimer is applicable for all other data files accompanying the Unicode
+Character Database, some of which have been compiled by the Unicode Consortium,
+and some of which have been supplied by other sources.
+
+Limitations on Rights to Redistribute This Data
+
+Recipient is granted the right to make copies in any form for internal
+distribution and to freely use the information supplied in the creation of
+products supporting the UnicodeTM Standard. The files in the Unicode Character
+Database can be redistributed to third parties or other organizations (whether
+for profit or not) as long as this notice and the disclaimer notice are retained.
+Information can be extracted from these files and used in documentation or
+programs, as long as there is an accompanying notice indicating the source.
+
+The file Unihan.txt contains older and inconsistent Terms of Use. That language
+is overridden by these terms.
+
+Unicode's current official terms say Data Files and Software are subject to
+Unicode License v3 unless a specific release restriction or license says
+otherwise. The current license is reproduced below as an additional reference,
+not as a replacement for the historical release-specific terms above.
+Its inclusion does NOT establish that this old generated table has been traced
+to the official data. Verify the derivation before treating this package as
+cleared for publication.
+
+Current official license retrieved 2026-10-12 from:
+https://www.unicode.org/license.txt
+
+UNICODE LICENSE V3
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright © 1991-2026 Unicode, Inc.
+
+NOTICE TO USER: Carefully read the following legal agreement.
+BY DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
+SOFTWARE, YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE
+TERMS AND CONDITIONS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT
+DOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE THE DATA FILES OR SOFTWARE.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of data files and any associated documentation (the "Data Files") or
+software and any associated documentation (the "Software") to deal in the
+Data Files or Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, and/or sell
+copies of the Data Files or Software, and to permit persons to whom the
+Data Files or Software are furnished to do so, provided that either (a)
+this copyright and permission notice appear with all copies of the Data
+Files or Software, or (b) this copyright and permission notice appear in
+associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+THIRD PARTY RIGHTS.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE
+BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA
+FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall
+not be used in advertising or otherwise to promote the sale, use or other
+dealings in these Data Files or Software without prior written
+authorization of the copyright holder.
+
+5. External dependencies and excluded contributors
+--------------------------------------------------
+SDK libc++ and zlib implementations are not embedded by this static-library
+packaging process. The consuming application's linkage and redistribution
+determine any additional runtime notice requirements.
+
+Contributor analysis, Snowball, and contributor streams are not included by
+the current build. Snowball's upstream engine has separate BSD-3-Clause terms;
+its wrapper has CLucene notices. The contributor PorterStemmer's permission
+grant remains unresolved. Those source-repository obligations are not satisfied
+by this binary-package document and must be handled before source publication.

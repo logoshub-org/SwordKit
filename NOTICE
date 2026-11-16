@@ -1,0 +1,51 @@
+SwordKit - the SWORD engine and CLucene, with a C extension layer and a Swift API over them
+
+COPYRIGHT
+  Original work Copyright (C) 2008-2012 CrossWire Bible Society and contributors
+  (see the git history for individual authors).
+  Modified work Copyright (C) 2026 Logos Hub Ltd.
+
+LICENSE OF THIS DISTRIBUTION
+  SwordKit is distributed as a combined work under the GNU General Public
+  License, version 2 only (GPL-2.0-only). It incorporates the SWORD library
+  (CrossWire Bible Society), whose source files state version 2 of the License.
+  The full license text is in the file LICENSE.
+
+FILES THAT CARRY THEIR OWN TERMS
+  Individual source files keep the license statements in their own headers.
+  Some state "version 2" only (GPL-2.0-only). Some state "version 2 ... or (at
+  your option) any later version" (GPL-2.0-or-later); that offer is not withdrawn
+  by this notice, but it can only be used for such a file separately from this
+  combined work. Third-party files carry the licenses listed below. A source file
+  that states no license is distributed under GPL-2.0-only as part of this
+  combined work. Files carrying an SPDX-License-Identifier line use that
+  identifier.
+
+THIRD-PARTY COMPONENTS
+  SWORD library
+    Path:   Vendor/sword
+    Terms:  GPL-2.0-only per file headers.
+
+  SWORD flat C API (flatapi.cpp, flatapi.h) and webmgr.hpp
+    Path:   Vendor/sword/bindings/flatapi.cpp
+            Vendor/sword/include/flatapi.h
+            Vendor/sword/bindings/corba/orbitcpp/webmgr.hpp
+    Terms:  Upstream SWORD files, unmodified; GPL-2.0-only (version 2 only,
+            stated in each header), Copyright CrossWire Bible Society.
+
+  minizip 1.1 (unzip only)
+    Path:   Vendor/sword/src/modules/common/unzip.c, ioapi.c
+    Terms:  zlib license (stated in unzip.h), unmodified. unzip.c also cites
+            the Info-ZIP license for its decryption code, which is compiled out.
+
+  CLucene 2.3.3.4 (with patches and a mobile build port)
+    Path:   Vendor/clucene (upstream/ is CLucene as released, unedited; patches/ are our
+            changes to it; port/ is our CMake build)
+    Terms:  CLucene's core is offered under the GNU Lesser General Public License,
+            version 2.1, or the Apache License 2.0, at the user's choice (Vendor/clucene/
+            upstream/COPYING). Its contributions code (contribs-lib), which this build
+            includes, is not offered under the Apache License. SwordKit uses CLucene under
+            the GNU LGPL, version 2.1 (Vendor/clucene/upstream/LGPL.license), the option
+            that applies to everything built here and is compatible with GPL-2.0-only.
+    Source: CLucene 2.3.3.4, git.code.sf.net/p/clucene/code tag clucene-src-2.3.3.4
+            (a834f87), with our patches (Vendor/UPSTREAM-clucene.txt).

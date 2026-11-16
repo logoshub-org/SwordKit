@@ -1,0 +1,68 @@
+--- a/src/core/CLucene/debug/error.cpp
++++ b/src/core/CLucene/debug/error.cpp
+@@ -8,8 +8,6 @@
+ #include "error.h"
+ #include "CLucene/util/Misc.h"
+ CL_NS_USE(util)
+-
+-
+ #ifdef _LUCENE_DISABLE_EXCEPTIONS
+ 	#ifdef _LUCENE_PRAGMA_WARNINGS
+ 	 #pragma message ("==================Lucene exceptions are disabled==================")
+--- a/src/shared/CLucene/SharedHeader.h
++++ b/src/shared/CLucene/SharedHeader.h
+@@ -7,6 +7,7 @@
+ #ifndef lucene_sharedheader_h
+ #define lucene_sharedheader_h
+ 
++
+ /**
+ * This header contains definitions and macros for helping create cross-platform code.
+ * It is primarily for use by the clucene-core library, but is split off so that
+--- a/src/contribs/CLucene/highlighter/Highlighter.cpp
++++ b/src/contribs/CLucene/highlighter/Highlighter.cpp
+@@ -228,11 +228,12 @@
+ 					// markup the cached token group info
+ 					 startOffset = tokenGroup->getStartOffset();
+ 					 endOffset = tokenGroup->getEndOffset();
+-
++						//printf("Highlighter::getBestTextFragments, startOffset is:%d and endOffset is%d\n",startOffset, endOffset);
+ 					 _tcsncpy(substringBuffer,text+startOffset,endOffset-startOffset);
+ 					 substringBuffer[endOffset-startOffset]=_T('\0');
+ 
+ 					 TCHAR* encoded = _encoder->encodeText(substringBuffer);
++						//printf("Highlighter::encoded text is:%s\n\n",lucene_wcstoutf8string(encoded, wcslen(encoded)).c_str());
+ 					 TCHAR* markedUpText=_formatter->highlightTerm(encoded, tokenGroup);
+ 					 _CLDELETE_CARRAY(encoded);
+ 
+--- a/src/contribs/CLucene/highlighter/SimpleHTMLFormatter.cpp
++++ b/src/contribs/CLucene/highlighter/SimpleHTMLFormatter.cpp
+@@ -44,6 +44,9 @@
+ TCHAR* SimpleHTMLFormatter::highlightTerm(const TCHAR* originalText, const TokenGroup* tokenGroup)
+ {
+ 	if(tokenGroup->getTotalScore()>0){
++		std::string origText = lucene_wcstoutf8string(originalText, wcslen(originalText));
++//		printf("SimpleHTMLFormatter::highlightTerm, originalText is:%s\n\n", origText.c_str());
++//		printf("start offset is %d, and end offset is:%d\n\n",tokenGroup->getStartOffset(), tokenGroup->getEndOffset());
+ 		StringBuffer sb;
+ 		sb.append(_preTag);
+ 		sb.append(originalText);
+--- a/src/shared/CLucene/config/_threads.h
++++ b/src/shared/CLucene/config/_threads.h
+@@ -16,7 +16,7 @@
+       //our own definitions to the thread locking functions:
+       #ifndef _WINBASE_
+       extern "C"{
+-          struct CRITICAL_SECTION
++          struct CRITICAL_SECTIONsdsds
+           {
+              struct critical_section_debug * DebugInfo;
+              long LockCount;
+@@ -31,7 +31,6 @@
+           __declspec(dllimport) void __stdcall LeaveCriticalSection(CRITICAL_SECTION *);
+           __declspec(dllimport) void __stdcall DeleteCriticalSection(CRITICAL_SECTION *);
+ 		      __declspec(dllimport) void __stdcall ExitThread(_cl_dword_t);
+-
+     	    __declspec(dllimport) unsigned long __stdcall GetCurrentThreadId();
+ 
+ #ifdef _M_X64

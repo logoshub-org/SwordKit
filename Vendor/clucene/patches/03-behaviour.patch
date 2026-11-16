@@ -1,0 +1,122 @@
+--- a/src/core/CLucene/index/IndexWriter.h
++++ b/src/core/CLucene/index/IndexWriter.h
+@@ -287,7 +287,9 @@
+ 	*  CLucene raises an exception, prompting the client programmer to
+ 	*  explicitly set a truncation policy by adjusting maxFieldLength.
+ 	*/
+-	LUCENE_STATIC_CONSTANT(int32_t, DEFAULT_MAX_FIELD_LENGTH = 10000);
++		//Modified the DEFAULT_MAX_FIELD_LENGTH to 1000000 from 10000
++		//since it was hitting the upper bound while indexing the HCSB
++	LUCENE_STATIC_CONSTANT(int32_t, DEFAULT_MAX_FIELD_LENGTH = 1000000);
+ 	LUCENE_STATIC_CONSTANT(int32_t, FIELD_TRUNC_POLICY__WARN = -1);
+ 
+   /**
+--- a/src/core/CLucene/index/Payload.cpp
++++ b/src/core/CLucene/index/Payload.cpp
+@@ -53,7 +53,7 @@
+   this->deleteArray = true;
+   this->_length = length;
+ 	this->offset = 0;
+-  assert(false);
++		//assert(false);
+ }
+ 
+ void Payload::setData(CL_NS(util)::ValueArray<uint8_t>& data, const int32_t offset, const int32_t length, bool deleteData) {
+--- a/src/core/CLucene/search/ConstantScoreQuery.cpp
++++ b/src/core/CLucene/search/ConstantScoreQuery.cpp
+@@ -25,14 +25,17 @@
+     BitSet* bits;
+     const float_t theScore;
+     int32_t _doc;
++    bool shouldDelete;
+ 
+ public:
+     ConstantScorer(Similarity* similarity, IndexReader* reader, Weight* w, Filter* filter) : Scorer(similarity),
+         bits(filter->bits(reader)), theScore(w->getValue()), _doc(-1)
+     {
++        shouldDelete = filter->shouldDeleteBitSet(bits);
+     }
+     virtual ~ConstantScorer() {
+-        _CLLDELETE(bits);
++        if ( shouldDelete)
++            _CLLDELETE(bits);
+     }
+ 
+     bool next() {
+--- a/src/core/CLucene/util/BitSet.cpp
++++ b/src/core/CLucene/util/BitSet.cpp
+@@ -32,6 +32,25 @@
+     3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
+ 
++const uint8_t BitSet::BYTE_OFFSETS[256] = {
++    8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 
++    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0};
++
++
+ BitSet::BitSet( const BitSet& copy ) :
+ 	_size( copy._size ),
+ 	_count(-1)
+@@ -180,19 +199,32 @@
+     return                            factor * (4 + (8+40)*count()) < size();
+   }
+ 
+-  int32_t BitSet::nextSetBit(int32_t fromIndex) const {
++  int32_t BitSet::nextSetBit(int32_t fromIndex) const 
++  {
+       if (fromIndex < 0)
+           _CLTHROWT(CL_ERR_IndexOutOfBounds, _T("fromIndex < 0"));
+ 
+       if (fromIndex >= _size)
+           return -1;
+ 
+-      while (true) {
+-          if ((bits[fromIndex >> 3] & (1 << (fromIndex & 7))) != 0)
+-              return fromIndex;
+-          if (++fromIndex == _size)
+-              return -1;
++      int _max = ( _size+7 ) >> 3;
++
++      unsigned int i = (int)( fromIndex>>3 );
++      unsigned int subIndex = fromIndex & 0x7; // index within the byte
++      uint8_t byte = bits[i] >> subIndex;  // skip all the bits to the right of index
++
++      if ( byte != 0 ) 
++      {
++          return ( ( i<<3 ) + subIndex + BYTE_OFFSETS[ byte ] );
+       }
++
++      while( ++i < _max ) 
++      {
++          byte = bits[i];
++          if ( byte != 0 ) 
++              return ( ( i<<3 ) + BYTE_OFFSETS[ byte ] );
++      }
++      return -1;
+   }
+ 
+ CL_NS_END
+--- a/src/core/CLucene/util/BitSet.h
++++ b/src/core/CLucene/util/BitSet.h
+@@ -39,6 +39,7 @@
+   /** Indicates if the bit vector is sparse and should be saved as a d-gaps list, or dense, and should be saved as a bit set. */
+   bool isSparse();
+   static const uint8_t BYTE_COUNTS[256];
++  static const uint8_t BYTE_OFFSETS[256];
+ protected:
+ 	BitSet( const BitSet& copy );
+ 

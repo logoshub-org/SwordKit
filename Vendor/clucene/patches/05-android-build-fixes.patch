@@ -1,0 +1,41 @@
+--- a/src/core/CLucene/queryParser/legacy/Lexer.cpp
++++ b/src/core/CLucene/queryParser/legacy/Lexer.cpp
+@@ -117,7 +117,7 @@
+       if( _istspace(ch)!=0 ) {
+          continue;
+       }
+-      TCHAR buf[2] = {ch,'\0'};
++      TCHAR buf[2] = {(TCHAR)ch,'\0'};
+       switch(ch) {
+          case '+':
+             token->set(buf, QueryToken::PLUS);
+--- a/src/shared/CLucene/util/Misc.cpp
++++ b/src/shared/CLucene/util/Misc.cpp
+@@ -467,6 +467,7 @@
+ std::string Misc::toString(const bool value){
+   return value ? "true" : "false";
+ }
++#ifndef __ANDROID__
+ std::string Misc::toString(_LUCENE_THREADID_TYPE value){
+   static int32_t nextindex = 0;
+   static std::map<_LUCENE_THREADID_TYPE, int32_t> ids;
+@@ -475,6 +476,7 @@
+   }
+   return toString(ids[value]);
+ }
++#endif
+ std::string Misc::toString(const int32_t value){
+   char buf[20];
+   TCHAR tbuf[20];
+--- a/src/shared/CLucene/util/Misc.h
++++ b/src/shared/CLucene/util/Misc.h
+@@ -72,7 +72,9 @@
+ 
+   static std::string toString(const int32_t value);
+   static std::string toString(const int64_t value);
++#ifndef __ANDROID__ // there pthread_t is a long: the same type as int64_t (or int32_t), so this overload would be a redeclaration
+   static std::string toString(const _LUCENE_THREADID_TYPE value);
++#endif
+   static std::string toString(const bool value);
+   static std::string toString(const float_t value);
+   static std::string toString(const TCHAR* s, int32_t len=-1);

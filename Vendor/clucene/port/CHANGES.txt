@@ -1,0 +1,56 @@
+CLucene Mobile changes from the existing CLucene 2.3.3.4 mobile checkout
+=====================================================================
+
+Recorded: 2026-10-12
+This is a downstream mobile port, not an official new CLucene release.
+
+Build and packaging changes
+---------------------------
+- Moved core, shared, and contributor sources under src/core, src/shared,
+  and src/contribs while retaining the internal CLucene include hierarchy.
+- Replaced separately maintained Xcode and ndk-build definitions with one
+  explicit CMake source list and platform presets.
+- Added a CLucene.h umbrella header, installation rules, CMake package metadata,
+  and an optional in-memory indexing/search smoke test.
+- Added arm64 iOS-device and arm64 iOS-simulator static-library builds and
+  XCFramework packaging. Default deployment target: iOS 15.6, using libc++.
+- Added future Android arm64-v8a and x86_64 NDK configurations; no claim of
+  tested Android support is made here.
+- Made highlighter optional and disabled by default. Other contributor
+  implementations are preserved but not enabled.
+- Excluded the unused incomplete FilterResultCache.cpp implementation and the
+  incomplete bundled deflate.cpp. The build links SDK/NDK zlib instead.
+
+Configuration changes
+---------------------
+- Moved the two CLucene configuration headers into CMake templates, with
+  generated copies isolated per build directory.
+- Disabled the obsolete ext/hash_map feature definition and replaced the
+  std::tr1 hashing namespace definition with std. The inherited hashing-disabled
+  behavior and wchar_t-based Unicode mode remain unchanged.
+
+Implementation changes
+----------------------
+- QueryParserTokenManager.cpp: replaced out-of-range 64-bit bitmask initializers
+  with representable signed -1 and -2 values, retaining the intended bit patterns.
+- QueryParser.cpp: replaced out-of-range 0x80000000 signed-array initializers
+  with the representable signed 32-bit minimum expression.
+- These changes address C++11 narrowing diagnostics without suppressing them.
+
+Attribution changes and limitations
+----------------------------------
+- Added binary-package NOTICE and THIRD_PARTY_LICENSES.txt documents, including
+  CLucene, GLib-derived code, Gary McNickle/RSA MD5, historical Unicode 4.0 UCD
+  Terms of Use, and additional current Unicode license information.
+- Kept the top-level Apache License 2.0 text unchanged.
+- Separated the repository-wide Markdown inventory from the binary notices in
+  docs/distribution/THIRD_PARTY_LICENSES.txt and updated the packaging path.
+- Added module-local license texts and dated provenance records for contributors,
+  MD5, Unicode/GLib-derived code, and the preserved zlib 1.2.3 deflate source.
+- Historical Unicode 4.0 UCD terms were located in the official release archive;
+  exact table derivation/provenance reconciliation remains open.
+  See THIRD_PARTY_LICENSES.txt before publishing this package.
+- No upstream SWORD or PocketSword changes are part of this package.
+
+This is a change summary, not a build manifest, legal clearance, or a guarantee
+that these modifications have passed full application-level runtime testing.

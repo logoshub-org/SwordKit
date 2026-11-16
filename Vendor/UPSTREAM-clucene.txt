@@ -1,0 +1,7 @@
+# Where Vendor/clucene comes from. The build records the first line that is not a comment.
+CLucene 2.3.3.4, git.code.sf.net/p/clucene/code tag clucene-src-2.3.3.4 (a834f87, 2011-03-17), with patches/ and port/ applied
+#
+# upstream/  CLucene's files as released; never edited.
+# patches/   our changes to them (see patches/README.md).
+# port/      the CMake build and scripts for iOS (Android untested), and licence notes.
+# CLucene does not change: rebuild it only if this changes, and give the new binary a new release tag, clucene-<version>.

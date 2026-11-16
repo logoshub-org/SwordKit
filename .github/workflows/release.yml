@@ -1,0 +1,144 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Logos Hub Ltd
+#
+# Builds the xcframeworks and publishes a SwordKit release (iOS), then the Android libraries (AAR) and attaches them to it.
+#
+#  - CLucene is built and released once, as the release `clucene-<version>`; later runs download that release and reuse it.
+#  - SwordCore is built against that CLucene, zipped, its checksum written into Package.swift (Tools/update_manifest.py), and the commit
+#    is tagged with the version and released with SwordCore.xcframework.zip and BUILD-INFO.json.
+# Run it from the Actions tab (Run workflow) on the default branch, with the version, e.g. 1.0.0.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SwordKit version (for example 1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CLUCENE_TAG: clucene-2.3.3.4
+  # The Xcode the binaries are built with: one of those installed on the macos-15 image (checked 2026-11-16 against
+  # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md: 26.0.1, 26.1.1, 26.2, 26.3). The deployment
+  # target is iOS 17, so a newer Xcode here than on the runner is not a problem; if the name is gone, the "Select Xcode" step fails first.
+  XCODE_APP: /Applications/Xcode_26.3.app
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Check the version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "version must look like 1.0.0" >&2; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      - name: Refuse a tag that exists
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "$VERSION already exists; releases are not replaced" >&2; exit 1
+          fi
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+
+      - name: CLucene (reuse the release, or build and publish it)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build
+          if gh release view "$CLUCENE_TAG" >/dev/null 2>&1; then
+            gh release download "$CLUCENE_TAG" --pattern CLucene.xcframework.zip --pattern CLUCENE-BUILD-INFO.json --dir build
+            (cd build && ditto -x -k CLucene.xcframework.zip .)
+          else
+            Tools/build_clucene_xcframework.sh
+            gh release create "$CLUCENE_TAG" build/CLucene.xcframework.zip build/CLUCENE-BUILD-INFO.json \
+              --title "CLucene ${CLUCENE_TAG#clucene-}" \
+              --notes "CLucene built from Vendor/clucene at $GITHUB_SHA. See CLUCENE-BUILD-INFO.json."
+          fi
+          echo "CLUCENE_CHECKSUM=$(swift package compute-checksum build/CLucene.xcframework.zip)" >> "$GITHUB_ENV"
+
+      - name: Build SwordCore
+        env:
+          VERSION: ${{ inputs.version }}
+        run: Tools/build_sword_xcframework.sh build/CLucene.xcframework "$VERSION"
+
+      - name: Write the checksums into Package.swift
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          SC=$(swift package compute-checksum build/SwordCore.xcframework.zip)
+          Tools/update_manifest.py --repo "$GITHUB_REPOSITORY" --version "$VERSION" \
+            --swordcore-checksum "$SC" --clucene-tag "$CLUCENE_TAG" --clucene-checksum "$CLUCENE_CHECKSUM"
+          cp build/BUILD-INFO.json BUILD-INFO.json
+          git diff --stat
+
+      - name: Build the package for the simulator and a device (local binaries)
+        run: |
+          export SWORDKIT_LOCAL=1
+          xcodebuild -scheme SwordKit -destination 'generic/platform=iOS Simulator' build
+          xcodebuild -scheme SwordKit -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+
+      - name: Commit, tag and release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Package.swift BUILD-INFO.json
+          git commit -m "SwordKit $VERSION"
+          git tag "$VERSION"
+          git push origin HEAD "refs/tags/$VERSION"
+          SWORD_VERSION=$(jq -r '.sword.version' build/BUILD-INFO.json)
+          gh release create "$VERSION" build/SwordCore.xcframework.zip build/BUILD-INFO.json \
+            --title "SwordKit $VERSION (SWORD $SWORD_VERSION, CLucene ${CLUCENE_TAG#clucene-})" --notes "See BUILD-INFO.json for the inputs of this build."
+
+  # Android: after the release exists. A failed run can be re-run on its own ("Re-run failed jobs"): the upload replaces what it made.
+  android:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Android NDK and CMake
+        run: |
+          sudo apt-get install -y ninja-build
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;30.0.16248370" "cmake;3.22.1" "platforms;android-36" >/dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+
+      - name: Build the AAR (arm64-v8a and x86_64)
+        env:
+          VERSION: ${{ inputs.version }}
+        run: Tools/package_android_aar.sh "$VERSION"
+
+      - name: Attach to the release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OUT=build/android-release
+          gh release upload "$VERSION" --clobber \
+            "$OUT/maven/org/logoshub/sword/$VERSION/sword-$VERSION.aar" \
+            "$OUT/maven/org/logoshub/sword-okhttp/$VERSION/sword-okhttp-$VERSION.aar" \
+            "$OUT/SwordKit-android-$VERSION-maven.zip" \
+            "$OUT/sword-$VERSION-symbols.zip"

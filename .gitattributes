@@ -1,0 +1,9 @@
+# Vendored sources and our patches are stored byte for byte: no line-ending conversion, whatever core.autocrlf says on a machine.
+# (A changed byte in upstream/ or a patch would break the CLucene assembly and its recorded checksums.)
+Vendor/** -text
+*.patch -text
+
+# Scripts must keep LF to run on macOS and Linux; the Windows batch file keeps CRLF.
+*.sh text eol=lf
+Android/gradlew text eol=lf
+*.bat text eol=crlf

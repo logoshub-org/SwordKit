@@ -1,0 +1,377 @@
+/******************************************************************************
+ *
+ * installmgr.h -	class InstallMgr: primary class to access all
+ * 			module installation functionality
+ *
+ * $Id$
+ *
+ * Copyright 2002-2013 CrossWire Bible Society (http://www.crosswire.org)
+ *	CrossWire Bible Society
+ *	P. O. Box 2528
+ *	Tempe, AZ  85280-2528
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation version 2.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ */
+
+#ifndef INSTALLMGR_H
+#define INSTALLMGR_H
+
+#include <defs.h>
+#include <swbuf.h>
+#include <map>
+#include <set>
+
+SWORD_NAMESPACE_START
+
+class SWMgr;
+class SWModule;
+class SWConfig;
+class RemoteTransport;
+class StatusReporter;
+
+/** A remote installation source configuration
+*/
+class SWDLLEXPORT InstallSource {
+	SWMgr *mgr;
+public:
+	InstallSource(const char *type, const char *confEnt = 0);
+	virtual ~InstallSource();
+	SWBuf getConfEnt() {
+		return caption +"|" + source + "|" + directory + "|" + u + "|" + p + "|" + uid;
+	}
+	SWBuf caption;
+	SWBuf source;
+	SWBuf directory;
+	SWBuf u;
+	SWBuf p;
+	SWBuf uid;
+
+	SWBuf type;
+	SWBuf localShadow;
+	void *userData;
+	SWMgr *getMgr();
+	void flush();
+
+	/** Sources which share a caption are chained together in the order they
+	 *  are read from InstallMgr.conf: HTTPSPackagePreference first, then
+	 *  HTTPPackagePreference, FTPSource, SFTPSource, HTTPSource, HTTPSSource.  Only the head of a
+	 *  chain appears in InstallMgr::sources.  A remote operation (refresh,
+	 *  install) tries each source in the chain, in order, until one succeeds,
+	 *  so an HTTPS PackagePreference chained before an FTP source gives
+	 *  "try https first, fall back to ftp".
+	 */
+	InstallSource *chainedSource;
+	/** true if this source is preferred for retrieving packages (e.g., an
+	 *  HTTPS mirror); it is tried before its chainedSource for single file
+	 *  downloads (packages/<Module>.zip, mods.d.tar.gz) but is never asked
+	 *  to list a directory, since http directory listings are not reliable
+	 *  across servers; directory copies fall through to the chainedSource.
+	 */
+	bool packagePreference;
+};
+
+/** A standard map of remote install sources.
+ */
+typedef std::map<SWBuf, InstallSource *> InstallSourceMap;
+
+/** Class to handle installation and maintenance of a SWORD library of books.
+ */
+class SWDLLEXPORT InstallMgr {
+
+protected:
+	std::set<SWBuf> defaultMods;
+	char *privatePath;
+	SWBuf confPath;
+	StatusReporter *statusReporter;
+	bool passive;
+	long timeoutMillis;
+	SWBuf u, p;
+	bool unverifiedPeerAllowed;
+	SWBuf caInfo;
+	bool forgetInstallSource;
+
+	/** override this method and provide your own custom RemoteTransport subclass
+	 */
+	virtual RemoteTransport *createFTPTransport(const char *host, StatusReporter *statusReporter);
+
+	/** override this method and provide your own custom HTTP RemoteTransport
+	 */
+	virtual RemoteTransport *createHTTPTransport(const char *host, StatusReporter *statusReporter);
+
+
+	/** we have a transport member to set as current running transport so we
+	 *  can ask it to terminate below, if user requests
+	 */
+	RemoteTransport *transport;
+
+public:
+
+	static bool userDisclaimerConfirmed;
+
+	/** installModule / refreshRemoteSource results are: 0 = OK; > 0 = not a failure but not
+	 *  done, e.g., module not found; -1 = user requested termination; -2 = cipher key required
+	 *  and not provided; and, to preserve the underlying failure code, banded by which step
+	 *  failed (test the most negative band first when decoding):
+	 *  <= REMOTE_ERROR_BASE   remote transfer failed: REMOTE_ERROR_BASE + last remoteCopy result
+	 *  <= COPYDIR_ERROR_BASE  copying module data into the library failed: COPYDIR_ERROR_BASE + FileMgr::copyDir result
+	 *  <= COPYFILE_ERROR_BASE copying a module file (e.g., its .conf) into the library failed: COPYFILE_ERROR_BASE + FileMgr::copyFile result
+	 */
+	static const int REMOTE_ERROR_BASE;
+	static const int COPYDIR_ERROR_BASE;
+	static const int COPYFILE_ERROR_BASE;
+
+	static const unsigned int MODSTAT_OLDER;
+	static const unsigned int MODSTAT_SAMEVERSION;
+	static const unsigned int MODSTAT_UPDATED;
+	static const unsigned int MODSTAT_NEW;
+	static const unsigned int MODSTAT_CIPHERED;
+	static const unsigned int MODSTAT_CIPHERKEYPRESENT;
+
+	SWConfig *installConf;
+
+	/** all remote sources configured for this installmgr.  Use this to gain access
+	 *  to individual remote sources.
+	 */
+	InstallSourceMap sources;
+
+	/** Username and Password supplied here can be used to identify your frontend
+	 *  by supplying a valid anon password like installmgr@macsword.com
+	 *  This will get overridden if a password is required and provided in an indivual
+	 *  source configuration.
+	 */
+	InstallMgr(const char *privatePath = "./", StatusReporter *statusReporter = 0, SWBuf u="ftp", SWBuf p="installmgr@user.com");
+	virtual ~InstallMgr();
+
+	/** Call to re-read InstallMgr.conf
+	 */
+	void readInstallConf();
+
+	/** Call to dump sources and other settings to InstallMgr.conf
+	 */
+	void saveInstallConf();
+
+	/** Removes all configured sources from memory.  Call saveInstallConf() to persist
+	 */
+	void clearSources();
+
+	/** call to delete all files of a locally installed module.
+	 * @manager - a manager with primary root pointing to where the module is located
+	 * @modName - the name of the module to remove
+	 */
+	virtual int removeModule(SWMgr *manager, const char *modName);
+
+	/** mostly an internally used method to remote download from a remote source
+	 * to a local destination
+	 * @is - remote installation source from which to copy
+	 * @src - path to resource on remote source
+	 * @dest - path to local destination
+	 * @dirTransfer - whether or not the resource to be copies is a folder
+	 * @suffix - a resource suffix filter to limit resources copied if {dirTransfer} is true, e.g., ".conf"
+	 *
+	 * @return 0 = OK; -1 = user requested termination; < -1 = some kind of problem
+	 *   (the RemoteTransport's result is passed through; see RemoteTransport::getURL)
+	 */
+	virtual int remoteCopy(InstallSource *is, const char *src, const char *dest, bool dirTransfer = false, const char *suffix = "");
+
+	/** call to install a module from a local path (fromLocation) or remote InstallSource (is) (leave the other 0)
+	 * @destMgr - a manager with primary root pointing to where module should be installed
+	 * @fromLocation - install from a local root folder path (null if installing remotely)
+	 * @modName - name of module to install
+	 * @is - remote installation source from which to install (null if installing locally)
+	 *
+	 * If {is} is the head of a chain of sources (see InstallSource::chainedSource) each source
+	 * in the chain is tried in order until one succeeds.
+	 *
+	 * @return 0 = OK; 1 = module not found in the source; -1 = user requested termination;
+	 *   -2 = cipher key required and not provided; < -1000 = failure, see REMOTE_ERROR_BASE
+	 *   and friends for how to decode which step failed and why
+	 */
+	virtual int installModule(SWMgr *destMgr, const char *fromLocation, const char *modName, InstallSource *is = 0);
+
+
+	/** call to obtain and locally cache the available content list of the remote source.
+	 * This must be called before the remote source can be used. 
+	 * This can be called again to refresh the remote source information from the remote source,
+	 * i.e., to see new and updated modules
+	 * If {is} is the head of a chain of sources (see InstallSource::chainedSource) each source
+	 * in the chain is tried in order until one succeeds, and the result is made available in
+	 * the local shadow of every source in the chain.
+	 *
+	 * @return 0 = OK; -1 = user requested termination; < -1000 = REMOTE_ERROR_BASE + the last
+	 *   remoteCopy result (see REMOTE_ERROR_BASE)
+	 */
+	virtual int refreshRemoteSource(InstallSource *is);
+
+
+	/** call to populate installmgr configuration with all known
+	 *  remote sources from the master list at CrossWire
+	 */
+	virtual int refreshRemoteSourceConfiguration();
+
+
+	/** Override this and provide an input mechanism to allow your users
+	 *  to confirm that they understand this important disclaimer.
+	 *  This method will be called immediately before attempting to perform
+	 *  any network function.
+	 *  If you would like your confirmation to always show at a predefined
+	 *  time before attempting network operations, then you can call this
+	 *  method yourself at the desired time.
+	 *
+	 *  Return true if your user confirms.
+	 *
+	 *  User disclaimer should ask user for confirmation of 2 critical items:
+	 *  and the default answer should be NO
+	 *  (due to possibly the wrong language for the disclaimer)
+	 *
+	 *  1) detection OK (Not in persecuted country)
+	 *  2) repos other than CrossWire may have questionable content
+	 *
+	 *  A sample default impl is provided below:
+	 *
+	 */
+	virtual bool isUserDisclaimerConfirmed() const; /* {
+
+		bool confirmed = userDisclaimerConfirmed;
+		
+		if (!confirmed) {
+			cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+			cout << "                -=+* WARNING *+=- -=+* WARNING *+=-\n\n\n";
+			cout << "Although Install Manager provides a convenient way for installing\n";
+			cout << "and upgrading SWORD components, it also uses a systematic method\n";
+			cout << "for accessing sites which gives packet sniffers a target to lock\n";
+			cout << "into for singling out users. \n\n\n";
+			cout << "IF YOU LIVE IN A PERSECUTED COUNTRY AND DO NOT WISH TO RISK DETECTION,\n";
+			cout << "YOU SHOULD *NOT* USE INSTALL MANAGER'S REMOTE SOURCE FEATURES.\n\n\n";
+			cout << "Also, Remote Sources other than CrossWire may contain less than\n";
+			cout << "quality modules, modules with unorthodox content, or even modules\n";
+			cout << "which are not legitimately distributable.  Many repositories\n";
+			cout << "contain wonderfully useful content.  These repositories simply\n";
+			cout << "are not reviewed or maintained by CrossWire and CrossWire\n";
+			cout << "cannot be held responsible for their content. CAVEAT EMPTOR.\n\n\n";
+			cout << "If you understand this and are willing to enable remote source features\n";
+			cout << "then type yes at the prompt\n\n";
+			cout << "enable? [no] ";
+
+			char prompt[10];
+			fgets(prompt, 9, stdin);
+			confirmed = (!strcmp(prompt, "yes\n"));
+			cout << "\n";
+		}
+		return confirmed;
+	} */
+
+
+	/** Preferred method of reporting user disclaimer confirmation is to override the above method
+	 * instead of using the setter below. This is provided for clients who don't wish to inherit
+	 * InstallMgr and override method.
+	 */
+	void setUserDisclaimerConfirmed(bool val) { InstallMgr::userDisclaimerConfirmed = val; }
+
+
+	/** override this and provide an input mechanism to allow your users
+	 * to enter the decipher code for a module.
+	 * return true you added the cipher code to the config.
+	 * default to return 'aborted'
+	 */
+	virtual bool getCipherCode(const char *modName, SWConfig *config) {
+		(void) modName; (void) config;	// to avoid "unused variable" warnings
+		return false;
+
+		/*
+		A sample implementation, roughly taken from the windows installmgr:
+
+		SectionMap::iterator section;
+		ConfigEntMap::iterator entry;
+		SWBuf tmpBuf;
+		section = config->Sections.find(modName);
+		if (section != config->Sections.end()) {
+			entry = section->second.find("CipherKey");
+			if (entry != section->second.end()) {
+				entry->second = ASK_USER_FOR_CIPHER_CODE();
+				config->Save();
+
+				// LET'S SHOW THE USER SOME SAMPLE TEXT FROM THE MODULE
+				SWMgr *mgr = new SWMgr();
+				SWModule *mod = mgr->getModule(modName);
+				mod->setKey("Ipet 2:12");
+				tmpBuf = mod->StripText();
+				mod->setKey("gen 1:10");
+				tmpBuf += "\n\n";
+				tmpBuf += mod->StripText();
+				if (SOME_DIALOG_CONFIRMATION(SWBuf(
+							"Using your provided cipher code,	\
+							here is the data from the module.	\
+							Does this look good?\n\n") + tmpBuf.c_str())) {
+
+					// if USER CLICKS OK means we should return true
+					return true;
+				}
+				delete mgr;
+			}
+		}
+		return false;
+		*/
+	}
+
+
+
+	/** whether or not to use passive mode when doing ftp transfers
+	 */
+	void setFTPPassive(bool passive) { this->passive = passive; }
+	bool isFTPPassive() { return passive; }
+
+	void setTimeoutMillis(long timeoutMillis) { this->timeoutMillis = timeoutMillis; }
+	long getTimeoutMillis() { return timeoutMillis; }
+
+	void setUnverifiedPeerAllowed(bool allowed) { this->unverifiedPeerAllowed = allowed; }
+
+	/** a PEM bundle of CA certificates for the TLS transports ([General]
+	 * CAInfo in InstallMgr.conf); empty leaves curl's built-in default */
+	void setCAInfo(const char *caInfo) { this->caInfo = caInfo ? caInfo : ""; }
+	const char *getCAInfo() const { return caInfo.c_str(); }
+	void setForgetInstallSource(bool forget) { this->forgetInstallSource = forget; }
+	bool isUnverifiedPeerAllowed() { return unverifiedPeerAllowed; }
+	bool isForgetInstallSource() { return forgetInstallSource; }
+
+	/** Request nicely to terminate an ongoing transfer.
+	 * If threading is a concern, consider calling terminate() from your status reporters
+	 * as they are typically the link between the transfer thread and your UI.
+	 */
+	void terminate();
+
+	/************************************************************************
+	 * getModuleStatus - compare the modules of two SWMgrs and return a
+	 * 	vector describing the status of each.  See MODSTAT_*
+	 * @param base The base SWMgr to compare-- usually represents what is currently installed
+	 * @param other The other SWMgr to compare to base-- usually represents an install source's SWMgr
+	 * @param utilModules whether to show user modules or utility modules; user modules is the default
+	 */
+	static std::map<SWModule *, int> getModuleStatus(const SWMgr &base, const SWMgr &other, bool utilModules = false);
+
+	/************************************************************************
+	 * isDefaultModule - allows an installation to provide a set of modules
+	 *   in installMgr.conf like:
+	 *     [General]
+	 *     DefaultMod=KJV
+	 *     DefaultMod=StrongsGreek
+	 *     DefaultMod=Personal
+	 *   This method allows a user interface to ask if a module is specified
+	 *   as a default in the above way.  The logic is, if no modules are
+	 *   installed then all default modules should be automatically selected for install
+	 *   to help the user select a basic foundation of useful modules
+	 */
+	bool isDefaultModule(const char *modName);
+};
+
+
+SWORD_NAMESPACE_END
+
+#endif

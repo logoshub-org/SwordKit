@@ -1,0 +1,7 @@
+// SWORD's flat C API and our C layer (sword_flat_ext), as one module. flatapi.h defines (not only declares) a few global
+// constants, so including it from several C files would duplicate them at link time; as a module it is compiled once.
+module CSwordCore {
+	header "../Vendor/sword/include/flatapi.h"
+	header "sword_flat_ext.h"
+	export *
+}

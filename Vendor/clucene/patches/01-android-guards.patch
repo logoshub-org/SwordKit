@@ -1,0 +1,154 @@
+--- a/src/core/CLucene/CLConfig.h
++++ b/src/core/CLucene/CLConfig.h
+@@ -230,6 +230,10 @@
+ //
+ ////////////////////////////////////////////////////////////////////
+ 
++///--This is only for Android
++#ifdef __ANDROID__
++typedef float float_t;
++#endif
+ 
+ #endif
+ 
+--- a/src/core/CLucene/util/Equators.h
++++ b/src/core/CLucene/util/Equators.h
+@@ -16,6 +16,9 @@
+ 
+ CL_NS_DEF(util)
+ 
++#ifdef __ANDROID__
++typedef float float_t;
++#endif
+ ////////////////////////////////////////////////////////////////////////////////
+ // Equators
+ ////////////////////////////////////////////////////////////////////////////////
+--- a/src/shared/CLucene/_SharedHeader.h
++++ b/src/shared/CLucene/_SharedHeader.h
+@@ -45,6 +45,9 @@
+ 	#define cl_strcpy(Dst,Src,DstLen) strcpy(Dst,Src)
+ #endif
+ 
++#ifdef __ANDROID__
++typedef float float_t;
++#endif
+ 
+ ///a blank string...
+ CLUCENE_SHARED_EXPORT extern const TCHAR* _LUCENE_BLANK_STRING;
+--- a/src/shared/CLucene/util/Misc.h
++++ b/src/shared/CLucene/util/Misc.h
+@@ -10,6 +10,11 @@
+ #include <vector>
+ 
+ CL_NS_DEF(util)
++
++#ifdef __ANDROID__
++typedef float float_t;
++#endif
++
+   /** A class containing various functions.
+   */
+   class CLUCENE_SHARED_EXPORT Misc{
+--- a/src/shared/CLucene/util/StringBuffer.h
++++ b/src/shared/CLucene/util/StringBuffer.h
+@@ -8,6 +8,10 @@
+ #define _lucene_util_StringBuffer_
+ 
+ CL_NS_DEF(util)
++#ifdef __ANDROID__
++typedef float float_t;
++#endif
++
+   class CLUCENE_SHARED_EXPORT StringBuffer{
+   public:
+    ///Constructor. Allocates a buffer with the default length.
+--- a/src/core/CLucene/index/IndexWriter.cpp
++++ b/src/core/CLucene/index/IndexWriter.cpp
+@@ -31,7 +31,9 @@
+ #include <assert.h>
+ #include <algorithm>
+ #include <iostream>
+-
++ #ifdef __ANDROID__
++    #include <android/log.h>
++#endif
+ CL_NS_USE(store)
+ CL_NS_USE(util)
+ CL_NS_USE(document)
+@@ -180,6 +182,9 @@
+ 
+ void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool closeDir,
+                        IndexDeletionPolicy* deletionPolicy, const bool autoCommit){
++     #ifdef __ANDROID__
++	__android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "beginning of the function");
++    #endif
+   this->_internal = new Internal(this);
+   this->termIndexInterval = IndexWriter::DEFAULT_TERM_INDEX_INTERVAL;
+   this->mergeScheduler = _CLNEW SerialMergeScheduler(); //TODO: implement and use ConcurrentMergeScheduler
+@@ -212,7 +217,9 @@
+   this->deleter = NULL;
+   this->docWriter = NULL;
+   this->writeLock = NULL;
+-
++ #ifdef __ANDROID__
++  __android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "this is before trying to acquire a lock");
++#endif
+   if (create) {
+     // Clear the write lock in case it's leftover:
+     directory->clearLock(IndexWriter::WRITE_LOCK_NAME);
+@@ -228,7 +235,9 @@
+     deinit(hasLock);
+     throw;
+   }
+-
++    #ifdef __ANDROID__
++  __android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "lock acquired now create a file");
++#endif
+   try {
+     if (create) {
+       // Try to read first.  This is to allow create
+@@ -239,14 +248,28 @@
+         segmentInfos->read(directory);
+         segmentInfos->clear();
+       } catch (CLuceneError& e) {
+-        if ( e.number() != CL_ERR_IO ) throw e;
++ #ifdef __ANDROID__
++    	  __android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "LuceneErrorOccurred and error is:%s, and number is:%d",e.what(),e.number());
++#endif
++        if ( e.number() != CL_ERR_IO )
++        	{
++                 #ifdef __ANDROID__
++        	__android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "LuceneError and is not CL_ERR_IO, error is:%s",e.what());
++#endif
++        		throw e;
++        	}
+         // Likely this means it's a fresh directory
+       }
+       segmentInfos->write(directory);
++ #ifdef __ANDROID__
++      __android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "segmentInfos->write(directory)");
++#endif
+     } else {
+       segmentInfos->read(directory);
+     }
+-
++#ifdef __ANDROID__
++    __android_log_print(ANDROID_LOG_INFO,"IndexWriter::Init", "we should reach here");
++#endif
+     this->autoCommit = autoCommit;
+     if (!autoCommit) {
+       rollbackSegmentInfos = segmentInfos->clone();
+--- a/src/shared/CLucene/config/repl_tprintf.cpp
++++ b/src/shared/CLucene/config/repl_tprintf.cpp
+@@ -100,7 +100,11 @@
+ 		size_t v;
+ 		size_t len = tmp->length();
+ 		for (size_t i=0;i<len;i++){
++#if !defined(__ANDROID__) && !defined(ANDROID)
+ 			v = wctomb(ob,*pointer);
++#else
++			v = wcrtomb(ob,*pointer,0);
++#endif // __ANDROID__		
+ 			if ( v > 0 ){
+ 				ob[v]='\0';
+ 				fputs(ob,stdout);

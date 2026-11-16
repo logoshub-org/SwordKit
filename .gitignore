@@ -1,0 +1,13 @@
+.DS_Store
+.build/
+.swiftpm/
+build/
+
+# Android
+Android/.gradle/
+Android/build/
+Android/sword/build/
+Android/sword-okhttp/build/
+Android/local.properties
+*.iml
+.idea/

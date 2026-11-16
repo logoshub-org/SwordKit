@@ -1,0 +1,5 @@
+# Where Vendor/sword comes from. Update this when the engine is updated (it is synced by hand for now): the build records the first
+# line that is not a comment.
+git.crosswire.org/main/sword master a376e42 (2026-11-01)
+# Local changes (confirm with a diff against that commit): include/config.h; src/modules/swmodule.cpp (explicit CLucene includes, modification notice).
+# Later this folder can come from CrossWire's source branch: replace it, update the line above, rebuild SwordCore.

@@ -1,0 +1,46 @@
+CLucene Mobile binary distribution
+CLucene version 2.3.3.4
+
+This package contains a modified CLucene mobile port, built as static libraries
+for arm64 iOS devices and arm64 iOS simulators. It is not an upstream release.
+
+CLucene
+Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team.
+Additional copyright notices are retained in the distributed headers and sources.
+For files that offer Apache License 2.0 or LGPL, this distribution uses the
+Apache License 2.0 option. See LICENSE-CLucene in the distribution (LICENSE in
+the source repository). Separate third-party terms remain applicable.
+
+GLib-derived Unicode classification and UTF-8 support
+Copyright (C) 1999 Tom Tromey.
+Copyright (C) 2000 Red Hat, Inc.
+Copyright 2003-2006 The Apache Software Foundation.
+The source notices explicitly state that this code is also licensed under the
+Apache license with permission from Tom Tromey and Owen Taylor.
+
+MD5 implementation
+Copyright (c) 2002, Gary McNickle. All rights reserved.
+Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All rights reserved.
+This implementation is derived from the RSA Data Security, Inc.
+MD5 Message-Digest Algorithm. Its complete notice is reproduced in
+THIRD_PARTY_LICENSES.txt.
+
+Unicode character data
+The bundled generated character tables identify Unicode data version 4.0.
+Source: Unicode Character Database, Version 4.0.0, Unicode, Inc.
+See THIRD_PARTY_LICENSES.txt for the historical UCD Terms of Use, additional
+current license information, and the unresolved table-provenance check.
+This NOTICE is not a claim that that check has been completed.
+
+Optional contributors
+The default package does not include contributor analysis, Snowball, highlighter,
+or contributor stream implementations. If highlighter support is enabled, its
+Apache Software Foundation Apache License 2.0 notices also apply; those notices
+are retained in its installed headers. Snowball's separate engine license and
+the unresolved contributor PorterStemmer license are not covered by this NOTICE.
+Their presence in the source repository does not mean they are in this binary.
+
+Changes are described in CHANGES.txt. Attribution and additional permission
+notices are in THIRD_PARTY_LICENSES.txt. These documents must accompany the
+package; applicable notices should also accompany applications redistributing
+its code. This NOTICE is informational and does not replace any license.

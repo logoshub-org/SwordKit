@@ -1,0 +1,11 @@
+contribs/CMakeLists.txt
+contribs/cmake
+core/CLucene.h
+core/CMakeLists.txt
+core/files_list.txt
+core/libclucene-core.pc.cmake
+shared/CLucene/_clucene-config.h.cmake
+shared/CLucene/clucene-config.h.cmake
+shared/CMakeLists.txt
+shared/README
+shared/cmake
