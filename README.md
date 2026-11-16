@@ -1,88 +1,68 @@
 # SwordKit
 
-SwordKit packages the [SWORD](https://crosswire.org/sword/) engine, its search library CLucene, and a Swift wrapper over them, so that any iOS application
-(iOS 17 and later) can use SWORD and CLucene by adding one Swift package. It builds SWORD and CLucene from the sources in this repository into
-xcframeworks (`SwordCore.xcframework` and `CLucene.xcframework`) and puts the Swift API, `SwordProvider`, on top of them.
+The [SWORD](https://crosswire.org/sword/) Bible engine and its search library CLucene, ready to use in an iOS or Android app.
 
-The iOS packages are provided as a versioned `SwordCore.xcframework.zip` and `CLucene.xcframework.zip` release, which Swift Package Manager downloads through `Package.swift`.
+Add one Swift package (iOS 17 and later) or one Android library, and your app can read installed SWORD modules (Bibles, commentaries,
+dictionaries), search them, and download and install more from CrossWire's repositories. SwordKit ships the compiled engine for you, so
+there is no C++ to build.
 
-For Android, SWORD, our C layer and CLucene are linked into one shared library per ABI (arm64-v8a and x86_64), `libsword_android.so`, which the AAR carries. `Android/sword` is the Gradle module (Kotlin classes over a JNI layer, the same shape as `SwordProvider`); `Android/sword-okhttp` is the OkHttp client for the install manager (a module of its own, so the core has no HTTP dependency). What exists and what to ask CrossWire for is in [docs/ANDROID-API.md](docs/ANDROID-API.md). Seventeen instrumented tests pass on an arm64 emulator, including a real download and install over HTTPS. The x86_64 library is built and checked but has not been run (the emulator here is arm64).
+## What you get
 
-**Android limits for now:** bzip2 is not supported. The NDK has no libbz2, so SWORD is built with `EXCLUDEBZIP2` and a module compressed with bzip2 (`CompressType=BZIP2`) will not open there. LZSS (SWORD's own) and zlib work. ICU is not used on either platform.
+- **Reading:** chapters, passages and dictionary entries from installed modules, as raw markup or plain text; module facts (language,
+  versification, direction, cipher); locked modules.
+- **Search:** a regular-expression search, and CLucene's indexed search (phrases, `&&`, `||`, Strong's `lemma:`) once an index is built.
+- **Installing modules:** SWORD's install manager over HTTPS, using your platform's own network stack (`URLSession` on iOS, OkHttp on Android),
+  so there is no curl to ship. Progress and cancellation are reported.
+- **Versification and passages:** book lists and verse counts for each versification system, and passage parsing.
 
-## Layout
+## iOS
 
-| Path | What it is |
-|---|---|
-| `Package.swift` | SPM, with two binary targets (`SwordCore.xcframework`, `CLucene.xcframework`) |
-| `Sources/SwordProvider/` | Swift over the C layer |
-| `Core/` | `CMakeLists.txt`, `sword_flat_ext`, `module.modulemap` |
-| `Vendor/sword/` | SWORD engine source, synced by hand |
-| `Vendor/clucene/` | CLucene 2.3.3.4 with our patches |
-| `Tools/assemble_clucene.sh` | upstream + patches + port into one tree to build |
-| `Tools/build_clucene_xcframework.sh` | builds `CLucene.xcframework` |
-| `Tools/build_sword_xcframework.sh` | builds `SwordCore.xcframework` and `BUILD-INFO.json` |
-| `Tools/update_manifest.py` | writes a release's URLs and checksums into `Package.swift` |
-| `.github/workflows/release.yml` | builds and publishes a release |
-| `docs/RELEASING.md` | how a release is made |
+In Xcode: File, Add Package Dependencies, enter `https://github.com/logoshub-org/SwordKit`, choose a version, and add the
+**SwordProvider** library to your app target.
 
-
-`sword_flat_ext` extends CrossWire's flat C API `flatapi.h`.
-It adds what that API lacks: the install manager and its host-supplied HTTP transport, search and building the index, versification tables, passage parsing, a module's facts as one struct, dictionary keys, and batching (`swx_read_chapter` returns a whole chapter).
-It shares the flat API's handles; C functions and types are prefixed `swx_`.
-It is plain C, so Swift imports it without C++ interoperability and an Android build can call it through JNI.
-
-## Using it
+Or in a `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/logoshub-org/SwordKit.git", from: "1.0.0")
+.package(url: "https://github.com/logoshub-org/SwordKit.git", from: "0.1.0")
 // then: .product(name: "SwordProvider", package: "SwordKit")
 ```
 
-## Versioning
+SwordProvider is a Swift API over two prebuilt binaries, `SwordCore.xcframework` (SWORD) and `CLucene.xcframework`, which Swift Package
+Manager downloads from this repository's releases.
 
-SwordKit uses [semantic versioning](https://semver.org/): the major version changes when there is a breaking change to the SwordKit API, the minor version when functionality is added, and the patch version for fixes. The version is SwordKit's own and does not follow SWORD's.
+## Android
 
-The SWORD version a release contains is recorded in `BUILD-INFO.json` (attached to the release) and in the release title, together with the CLucene version, for example: `SwordKit 1.0.0 (SWORD 1.9.0.3981, CLucene 2.3.3.4)`.
+arm64-v8a and x86_64, minimum API 23. Each release has `SwordKit-android-<version>-maven.zip`: unpack it as a local Maven repository,
+add that folder as a repository in Gradle, and depend on:
 
-## Building
-
-You need a Mac with Xcode (iOS 17 SDK or later) and cmake.
-
-```sh
-Tools/build_clucene_xcframework.sh                # once; needs cmake and Xcode
-Tools/build_sword_xcframework.sh                  # uses build/CLucene.xcframework; add the path of another, and a version, as arguments
-SWORDKIT_LOCAL=1 xcodebuild build -scheme SwordKit -destination 'generic/platform=iOS Simulator'
+```kotlin
+implementation("org.logoshub:sword-okhttp:<version>")   // brings org.logoshub:sword (the library) and OkHttp
 ```
 
-For Android (needs `ANDROID_NDK_HOME`, cmake and make or ninja; the NDK and the SDK's cmake come from Android Studio's SDK Manager):
+Register the HTTP client once at startup with `SwordInstallManager.setHttpFetcher(OkHttpFetcher())`. The release also has the two AARs and a
+zip of unstripped libraries for reading crash traces. If your app also bundles the C++ runtime, add
+`packaging { jniLibs { pickFirsts += "**/libc++_shared.so" } }`. The core library is `org.logoshub:sword`; use it alone if you bring your own
+HTTP client.
 
-```sh
-Tools/assemble_clucene.sh build/clucene-android && (cd build/clucene-android && bash scripts/build-android.sh all arm64-v8a)
-Tools/build_sword_android.sh [abi]                # build/android/<abi>/libsword_android.so and libc++_shared.so (arm64-v8a or x86_64)
-Tools/run_android_tests.sh <module folder>        # the instrumented tests on a running emulator (needs JAVA_HOME, ANDROID_HOME)
-Tools/package_android_aar.sh <version>            # both ABIs, stripped, then the AARs and a Maven folder in build/android-release/
-```
+## Versions
 
-With `SWORDKIT_LOCAL=1`, `Package.swift` uses the two xcframeworks in `build/` instead of the releases. The libraries have iOS slices only, so tests need a simulator (`xcodebuild test`), not `swift test`.
+SwordKit follows semantic versioning; its version is its own, not SWORD's. A release's title and `BUILD-INFO.json` record the SWORD and
+CLucene versions inside it, for example "SwordKit 0.1.0 (SWORD 1.9.0.3981, CLucene 2.3.3.4)".
 
-Releases are made manually from the Actions tab (Release, Run workflow), not on push; see [docs/RELEASING.md](docs/RELEASING.md).
+## Limits
 
-## Why two binaries from one repository
-
-```mermaid
-flowchart TD
-    App[Your iOS app] --> SP[SwordProvider - Swift API]
-    SP --> SC[SwordCore.xcframework - SWORD + sword_flat_ext]
-    SP --> CL[CLucene.xcframework]
-    SC -. built against .-> CL
-```
-
-SWORD's search code (`swmodule.cpp`) calls CLucene, so SwordCore is built against CLucene's headers and every app must link both. They are in one repository so that the two are built from one commit and cannot drift. They are two binaries because they change at different rates:
-SwordCore with every SWORD or C-layer change, CLucene never. CLucene has a release of its own, `clucene-2.3.3.4`, that every SwordKit version names, so SwiftPM downloads it once and keeps it.
+- iOS has simulator and device slices only; tests need a simulator, not `swift test`.
+- On Android, modules compressed with bzip2 do not open (the NDK has no libbz2); the others do.
+- The Android x86_64 library is built and checked but has not been run on an emulator or device.
 
 ## Licence
 
-SWORD's files are GPL-2.0-only; Logos Hub's files are GPL-2.0-or-later; the combined work is GPL-2.0-only. See `LICENSE` and `NOTICE`.
+SwordKit is a combined work under the GNU General Public License, version 2 only (GPL-2.0-only), because it includes SWORD. An app that
+links it must be GPL-2.0-compatible. The full text is in [LICENSE](LICENSE); each component's terms, including CLucene (used under the
+LGPL 2.1), are in [NOTICE](NOTICE).
 
-CLucene's terms are in `Vendor/clucene/upstream/` (`COPYING`, `LGPL.license`, `APACHE.license`) and `Vendor/clucene/port/` (`LICENSE`, `NOTICE`, `THIRD_PARTY_LICENSES.md`).
+## Working on SwordKit
+
+Building the binaries, running the tests, making a release, and how the repository is laid out are in
+[docs/DEVELOPING.md](docs/DEVELOPING.md) and [docs/RELEASING.md](docs/RELEASING.md). What the Android side offers, and what could be
+offered to CrossWire, is in [docs/ANDROID-API.md](docs/ANDROID-API.md).
