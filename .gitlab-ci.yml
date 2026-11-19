@@ -1,0 +1,147 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Logos Hub Ltd
+#
+# The GitLab counterpart of .github/workflows/release.yml: builds the xcframeworks and publishes a SwordKit release (iOS), then builds
+# the Android libraries (AAR) and adds them to it. Both jobs run on a self-hosted Mac runner (shell executor, tag `macos`).
+#
+# GitLab releases hold links, not files: every file goes to this project's generic package registry and the release links to it.
+#  - CLucene is built and uploaded once, as the package `clucene/2.3.3.4`; later runs download it and reuse it.
+#  - SwordCore is built against that CLucene and uploaded as `swordcore/<version>`, its URL and checksum are written into Package.swift
+#    (Tools/update_manifest.py), the commit is pushed and tagged with the version, and the release is created (Tools/gitlab_release.py).
+#  - Android: `swordkit-android/<version>`, linked from the same release.
+# For SwiftPM to download the binaries without a login the project must be public (or each user needs a .netrc with a token).
+#
+# Run it from Build > Pipelines > Run pipeline on the default branch, with VERSION set, e.g. 1.0.0.
+#
+# One-time setup:
+#  - A project access token (Settings > Access tokens), role Maintainer, scopes `api` and `write_repository`, saved as the masked,
+#    protected CI/CD variable RELEASE_TOKEN. It pushes the release commit and tag and calls the Releases API.
+#  - The Mac runner: gitlab-runner with the shell executor, tag `macos`, and on it the Xcode named in XCODE_APP, cmake, ninja, a JDK 21,
+#    and the Android SDK at ANDROID_HOME with "ndk;30.0.16248370", "cmake;3.22.1" and "platforms;android-36" installed.
+
+workflow:
+  rules:
+    # only when run by hand (pushes, including the release commit itself, start no pipeline)
+    - if: $CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+variables:
+  VERSION:
+    value: ""
+    description: "SwordKit version (for example 1.0.0)"
+  CLUCENE_VERSION: "2.3.3.4"
+  CLUCENE_TAG: "clucene-2.3.3.4"
+  # The Xcode the binaries are built with: DEVELOPER_DIR selects it per job, so no sudo xcode-select on the runner.
+  XCODE_APP: /Applications/Xcode_26.3.app
+  ANDROID_NDK_VERSION: "30.0.16248370"
+  PACKAGES: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
+  # the shell executor keeps the checkout between runs; this removes build/ and anything else untracked first
+  GIT_CLEAN_FLAGS: -ffdx
+
+default:
+  tags: [macos]
+  before_script:
+    - export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+    - echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "set VERSION, like 1.0.0" >&2; exit 1; }
+    - '[ -n "${RELEASE_TOKEN:-}" ] || { echo "the CI/CD variable RELEASE_TOKEN is not set (see the top of .gitlab-ci.yml)" >&2; exit 1; }'
+
+stages: [release, android]
+
+release:
+  stage: release
+  script:
+    - export DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+    - xcodebuild -version
+
+    - echo "Refuse a tag or release that exists"
+    - |
+      if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1 || Tools/gitlab_release.py exists "$VERSION"; then
+        echo "$VERSION already exists; releases are not replaced" >&2; exit 1
+      fi
+
+    - echo "CLucene (reuse the package, or build and upload it)"
+    - mkdir -p build
+    - CLUCENE_PKG="$PACKAGES/clucene/$CLUCENE_VERSION"
+    - |
+      CODE=$(curl -sSL -o build/CLucene.xcframework.zip -w '%{http_code}' -H "JOB-TOKEN: $CI_JOB_TOKEN" "$CLUCENE_PKG/CLucene.xcframework.zip")
+      if [ "$CODE" = 200 ]; then
+        curl -fsSL -o build/CLUCENE-BUILD-INFO.json -H "JOB-TOKEN: $CI_JOB_TOKEN" "$CLUCENE_PKG/CLUCENE-BUILD-INFO.json"
+        (cd build && ditto -x -k CLucene.xcframework.zip .)
+      elif [ "$CODE" = 404 ]; then
+        rm -f build/CLucene.xcframework.zip
+        Tools/build_clucene_xcframework.sh
+        for F in CLucene.xcframework.zip CLUCENE-BUILD-INFO.json; do
+          curl -fsS -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "build/$F" "$CLUCENE_PKG/$F"
+        done
+      else
+        echo "downloading CLucene from the package registry failed (HTTP $CODE)" >&2; exit 1
+      fi
+    - CLUCENE_CHECKSUM=$(swift package compute-checksum build/CLucene.xcframework.zip)
+
+    - echo "Build SwordCore"
+    - Tools/build_sword_xcframework.sh build/CLucene.xcframework "$VERSION"
+
+    - echo "Upload SwordCore and write the URLs and checksums into Package.swift"
+    - SWORDCORE_PKG="$PACKAGES/swordcore/$VERSION"
+    - |
+      for F in SwordCore.xcframework.zip BUILD-INFO.json; do
+        curl -fsS -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "build/$F" "$SWORDCORE_PKG/$F"
+      done
+    - SC=$(swift package compute-checksum build/SwordCore.xcframework.zip)
+    - |
+      Tools/update_manifest.py --version "$VERSION" --clucene-tag "$CLUCENE_TAG" \
+        --swordcore-checksum "$SC" --swordcore-url "$SWORDCORE_PKG/SwordCore.xcframework.zip" \
+        --clucene-checksum "$CLUCENE_CHECKSUM" --clucene-url "$CLUCENE_PKG/CLucene.xcframework.zip"
+    - cp build/BUILD-INFO.json BUILD-INFO.json
+    - git diff --stat
+
+    - echo "Build the package for the simulator and a device (local binaries)"
+    - SWORDKIT_LOCAL=1 xcodebuild -scheme SwordKit -destination 'generic/platform=iOS Simulator' build
+    - SWORDKIT_LOCAL=1 xcodebuild -scheme SwordKit -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+
+    - echo "Commit, tag and release"
+    - git config user.name "SwordKit release"
+    - git config user.email "${GITLAB_USER_EMAIL:-release@$CI_SERVER_HOST}"
+    - git add Package.swift BUILD-INFO.json
+    - git commit -m "SwordKit $VERSION"
+    - git tag "$VERSION"
+    - PUSH_URL="${CI_SERVER_PROTOCOL}://oauth2:${RELEASE_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/${CI_PROJECT_PATH}.git"
+    # the checkout is a detached HEAD at the pipeline's commit: push it to the default branch (refused if the branch moved meanwhile)
+    - git push "$PUSH_URL" "HEAD:refs/heads/$CI_DEFAULT_BRANCH" "refs/tags/$VERSION"
+    - SWORD_VERSION=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["sword"]["version"])' build/BUILD-INFO.json)
+    - |
+      Tools/gitlab_release.py create "$VERSION" \
+        "SwordKit $VERSION (SWORD $SWORD_VERSION, CLucene $CLUCENE_VERSION)" "See BUILD-INFO.json for the inputs of this build." \
+        "SwordCore.xcframework.zip=$SWORDCORE_PKG/SwordCore.xcframework.zip" \
+        "BUILD-INFO.json=$SWORDCORE_PKG/BUILD-INFO.json" \
+        "CLucene.xcframework.zip=$CLUCENE_PKG/CLucene.xcframework.zip"
+
+# Android: after the release exists. A failed job can be retried on its own: the uploads are made again and the links replaced.
+android:
+  stage: android
+  needs: [release]
+  script:
+    - git fetch --force origin "refs/tags/$VERSION:refs/tags/$VERSION"
+    - git checkout --force "$VERSION"
+    - export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+    - export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+    - export JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home -v 21)}"
+    - '[ -d "$ANDROID_NDK_HOME" ] || { echo "no NDK $ANDROID_NDK_VERSION at $ANDROID_NDK_HOME" >&2; exit 1; }'
+
+    - echo "Build the AAR (arm64-v8a and x86_64)"
+    - Tools/package_android_aar.sh "$VERSION"
+
+    - echo "Upload and link from the release"
+    - OUT=build/android-release
+    - PKG="$PACKAGES/swordkit-android/$VERSION"
+    - |
+      set -- "$OUT/maven/org/logoshub/sword/$VERSION/sword-$VERSION.aar" \
+             "$OUT/maven/org/logoshub/sword-okhttp/$VERSION/sword-okhttp-$VERSION.aar" \
+             "$OUT/SwordKit-android-$VERSION-maven.zip" \
+             "$OUT/sword-$VERSION-symbols.zip"
+      LINKS=""
+      for F in "$@"; do
+        N=$(basename "$F")
+        curl -fsS -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$F" "$PKG/$N"
+        LINKS="$LINKS $N=$PKG/$N"
+      done
+      Tools/gitlab_release.py link "$VERSION" $LINKS

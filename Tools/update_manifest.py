@@ -7,6 +7,9 @@
 #   Tools/update_manifest.py --repo owner/SwordKit --version 1.0.0 --swordcore-checksum <hex> \
 #       --clucene-tag clucene-2.3.3.4 --clucene-checksum <hex> [--package Package.swift]
 #
+# With --swordcore-url and --clucene-url it writes those URLs instead of the GitHub release ones (the GitLab pipeline passes its
+# package-registry URLs), and --repo is not needed.
+#
 # It is safe to run again: each target's URL and checksum are found by the target's name, whatever they hold now.
 import argparse
 import re
@@ -26,15 +29,20 @@ def rewrite(text, name, zip_name, url, checksum):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--repo", required=True, help="owner/name on GitHub")
+    ap.add_argument("--repo", help="owner/name on GitHub (not needed with both URLs)")
     ap.add_argument("--version", required=True, help="SwordKit version, e.g. 1.0.0")
     ap.add_argument("--swordcore-checksum", required=True)
     ap.add_argument("--clucene-tag", default="clucene-2.3.3.4")
     ap.add_argument("--clucene-checksum", required=True)
     ap.add_argument("--package", default="Package.swift")
+    ap.add_argument("--swordcore-url", help="SwordCore.xcframework.zip's download URL (default: the GitHub release's)")
+    ap.add_argument("--clucene-url", help="CLucene.xcframework.zip's download URL (default: the GitHub release's)")
     a = ap.parse_args()
-    if not re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", a.repo):
-        sys.exit("--repo must be owner/name")
+    if not (a.swordcore_url and a.clucene_url) and not (a.repo and re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", a.repo)):
+        sys.exit("--repo must be owner/name (or pass both --swordcore-url and --clucene-url)")
+    for u in (a.swordcore_url, a.clucene_url):
+        if u is not None and not re.match(r"^https://[^\s\"]+$", u):
+            sys.exit("a URL must be https:// with no spaces or quotes")
     if not re.match(r"^[0-9]+\.[0-9]+\.[0-9]+$", a.version):
         sys.exit("--version must be like 1.0.0")
     for c in (a.swordcore_checksum, a.clucene_checksum):
@@ -43,9 +51,9 @@ def main():
     text = open(a.package).read()
     base = "https://github.com/%s/releases/download" % a.repo
     text = rewrite(text, "SwordCore", "SwordCore.xcframework.zip",
-                   "%s/%s/SwordCore.xcframework.zip" % (base, a.version), a.swordcore_checksum)
+                   a.swordcore_url or "%s/%s/SwordCore.xcframework.zip" % (base, a.version), a.swordcore_checksum)
     text = rewrite(text, "CLucene", "CLucene.xcframework.zip",
-                   "%s/%s/CLucene.xcframework.zip" % (base, a.clucene_tag), a.clucene_checksum)
+                   a.clucene_url or "%s/%s/CLucene.xcframework.zip" % (base, a.clucene_tag), a.clucene_checksum)
     open(a.package, "w").write(text)
 
 
