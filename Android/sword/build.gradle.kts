@@ -31,7 +31,9 @@ android {
 }
 
 val copyLicences by tasks.registering(Copy::class) {
-    from("../../LICENSE", "../../NOTICE")
+    // SwordKit's own, and CLucene's (statically linked into the library): the LGPL-2.1 text it is used under and the binary notices
+    from("../../LICENSE", "../../NOTICE", "../../Vendor/clucene/upstream/LGPL.license",
+         "../../Vendor/clucene/port/docs/distribution/THIRD_PARTY_LICENSES.txt")
     into(layout.buildDirectory.dir("generated/licences/META-INF/org.logoshub.sword"))
 }
 tasks.matching { it.name.startsWith("process") && it.name.endsWith("JavaRes") }.configureEach { dependsOn(copyLicences) }

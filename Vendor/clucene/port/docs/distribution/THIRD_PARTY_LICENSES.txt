@@ -6,14 +6,22 @@ Scope
 This document covers the core/shared binary package and optional highlighter,
 not a complete license inventory of every preserved source-repository file.
 Do not treat it as a blanket license grant or completed legal clearance.
-Keep it with LICENSE-CLucene, NOTICE, and CHANGES.txt when distributing the
-XCFramework. No third-party component is relicensed by this document.
+Keep it with LICENSE-CLucene, the LGPL-2.1 text (LGPL.license, in
+Vendor/clucene/upstream of the SwordKit repository), NOTICE, and CHANGES.txt
+when distributing the XCFramework. No third-party component is relicensed by this document.
 
 1. CLucene and optional highlighter
 ----------------------------------
-The full Apache License, Version 2.0 is provided in LICENSE-CLucene (LICENSE
-in the source repository). Core CLucene source notices offer Apache License
-2.0 or LGPL; the Apache option is selected for this package where offered.
+Core CLucene source notices offer the Apache License 2.0 or the GNU Lesser
+General Public License. SwordKit uses CLucene under the LGPL, version 2.1, the
+option that is compatible with GPL-2.0-only (owner's decision, 2026-11-16); the
+Apache option is not selected. The LGPL-2.1 text is LGPL.license in
+Vendor/clucene/upstream of the SwordKit repository. The full Apache License,
+Version 2.0 is provided in LICENSE-CLucene (LICENSE in the source repository)
+for this port's own files and for notices that offer it; it is not the licence
+this package is used under. CLucene is linked as static libraries: the
+repository holds CLucene as released, the patches and the build, so a modified
+CLucene can be built and relinked (LGPL-2.1, section 6).
 
 Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team.
 Other authors' copyright notices remain in the source files and headers.
@@ -66,8 +74,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-This package uses the expressly offered Apache option for that code. The
-GLib-derived software notice is separate from the Unicode data terms below.
+This package uses that code under the GNU Lesser General Public License,
+version 2 or later, as part of the LGPL-2.1 terms above; the Apache option the
+authors also offer is not used. The GLib-derived software notice is separate
+from the Unicode data terms below.
 
 3. Gary McNickle / RSA Data Security MD5 implementation
 ------------------------------------------------------

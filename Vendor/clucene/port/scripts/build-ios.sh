@@ -55,4 +55,10 @@ xcodebuild -create-xcframework \
     -output "$ROOT/dist/CLucene.xcframework"
 cp "$ROOT/LICENSE" "$ROOT/dist/LICENSE-CLucene"
 cp "$ROOT/NOTICE" "$ROOT/docs/distribution/THIRD_PARTY_LICENSES.txt" "$ROOT/CHANGES.txt" "$ROOT/dist/"
+# the LGPL-2.1 text, which SwordKit's use of CLucene rests on (assembled next to the port's files; absent in a bare checkout of the port)
+if [[ -f "$ROOT/LGPL.license" ]]; then
+    cp "$ROOT/LGPL.license" "$ROOT/dist/"
+else
+    printf 'warning: LGPL.license not found beside the port; copy it into dist/ before distributing.\n' >&2
+fi
 printf '\nBuilt %s\n' "$ROOT/dist/CLucene.xcframework"

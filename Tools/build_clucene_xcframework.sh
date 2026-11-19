@@ -29,7 +29,7 @@ cp -R "$CL/dist/CLucene.xcframework" "$OUT"
 # the licences travel with the binary: CLucene's own terms, then the port's
 mkdir -p "$OUT/licenses"
 cp "$ROOT/Vendor/clucene/upstream/COPYING" "$ROOT/Vendor/clucene/upstream/LGPL.license" "$ROOT/Vendor/clucene/upstream/APACHE.license" "$OUT/licenses/"
-cp "$ROOT/Vendor/clucene/port/LICENSE" "$ROOT/Vendor/clucene/port/NOTICE" "$ROOT/Vendor/clucene/port/THIRD_PARTY_LICENSES.md" "$OUT/licenses/"
+cp "$ROOT/Vendor/clucene/port/LICENSE" "$ROOT/Vendor/clucene/port/NOTICE" "$ROOT/Vendor/clucene/port/THIRD_PARTY_LICENSES.md" "$ROOT/Vendor/clucene/port/docs/distribution/THIRD_PARTY_LICENSES.txt" "$OUT/licenses/"
 (cd "$ROOT/build" && ditto -c -k --sequesterRsrc --keepParent CLucene.xcframework CLucene.xcframework.zip)
 CHECKSUM=$(swift package compute-checksum "$ZIP")
 

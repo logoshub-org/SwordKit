@@ -5,10 +5,14 @@ code. The [binary distribution notices](docs/distribution/THIRD_PARTY_LICENSES.t
 have a narrower scope and are copied to `dist/THIRD_PARTY_LICENSES.txt` when
 packaging. Neither document is a blanket license grant or legal clearance.
 
-The top-level [LICENSE](LICENSE) remains the unchanged Apache License 2.0 text.
-Preserve each file's original notices. Files explicitly offering Apache 2.0 or
-LGPL retain that offer; this binary build selects Apache where offered. Do not
-assume that independently bundled code inherits those choices.
+The top-level [LICENSE](LICENSE) remains the unchanged Apache License 2.0 text
+(it covers this port's own files). Preserve each file's original notices. Files
+explicitly offering Apache 2.0 or LGPL retain that offer. SwordKit, which builds
+and ships this library, uses CLucene under the GNU Lesser General Public License,
+version 2.1, the option that is compatible with GPL-2.0-only (owner's decision,
+2026-11-16; the LGPL text is `Vendor/clucene/upstream/LGPL.license` in SwordKit).
+It does not select the Apache option. Do not assume that independently bundled
+code inherits that choice.
 
 ## Component Inventory
 
@@ -21,7 +25,7 @@ assume that independently bundled code inherits those choices.
 | Snowball C++ wrapper | CLucene Apache-or-LGPL notices | No |
 | Snowball C stemmer engine | Upstream BSD-3-Clause; reconcile bundled snapshot with upstream | No |
 | MD5 implementation | Gary McNickle/RSA permission and identification terms, in addition to CLucene notices | Yes |
-| GLib-derived classification and UTF-8 code | Explicit additional Apache permission in source notices | Yes |
+| GLib-derived classification and UTF-8 code | LGPL 2 or later notice, and explicit additional Apache permission, in source notices; used under LGPL-2.1 | Yes |
 | Unicode 4.0 character data | Historical UCD Terms of Use located; exact table derivation still to verify | Yes |
 | Preserved bundled deflate implementation | zlib terms; excluded incomplete source, not SDK zlib | No |
 

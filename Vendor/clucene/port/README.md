@@ -43,8 +43,11 @@ See [the Android steps](docs/building.md#android-future-build-path).
 
 ## License
 
-The primary [LICENSE](LICENSE) is Apache 2.0. CLucene files retain their existing
-Apache-or-LGPL offers; this binary distribution selects Apache where offered.
+The primary [LICENSE](LICENSE) is Apache 2.0; it covers this port's own files.
+CLucene files retain their existing Apache-or-LGPL offers. SwordKit uses CLucene
+under the GNU Lesser General Public License, version 2.1, which is compatible with
+GPL-2.0-only; it does not select the Apache option. The LGPL-2.1 text is
+`Vendor/clucene/upstream/LGPL.license` in the SwordKit repository.
 Bundled third-party code retains its own terms.
 
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) covers the whole repository and

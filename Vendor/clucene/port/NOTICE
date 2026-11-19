@@ -7,16 +7,22 @@ for arm64 iOS devices and arm64 iOS simulators. It is not an upstream release.
 CLucene
 Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team.
 Additional copyright notices are retained in the distributed headers and sources.
-For files that offer Apache License 2.0 or LGPL, this distribution uses the
-Apache License 2.0 option. See LICENSE-CLucene in the distribution (LICENSE in
-the source repository). Separate third-party terms remain applicable.
+For files that offer Apache License 2.0 or LGPL, SwordKit uses the GNU Lesser
+General Public License, version 2.1 (LGPL.license, in Vendor/clucene/upstream of
+the SwordKit repository); the Apache option is not selected. LICENSE-CLucene (the
+Apache License 2.0; LICENSE in the source repository) covers this port's own files.
+The libraries are static, and the repository holds CLucene as released, the patches
+and the build, so a modified CLucene can be built and relinked. Separate
+third-party terms remain applicable.
 
 GLib-derived Unicode classification and UTF-8 support
 Copyright (C) 1999 Tom Tromey.
 Copyright (C) 2000 Red Hat, Inc.
 Copyright 2003-2006 The Apache Software Foundation.
-The source notices explicitly state that this code is also licensed under the
-Apache license with permission from Tom Tromey and Owen Taylor.
+The source notices license this code under the GNU Lesser General Public License,
+version 2 or later, which SwordKit uses (as part of LGPL-2.1 above). They also
+state that it is licensed under the Apache license with permission from Tom
+Tromey and Owen Taylor; that option is not used.
 
 MD5 implementation
 Copyright (c) 2002, Gary McNickle. All rights reserved.
