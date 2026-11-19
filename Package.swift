@@ -20,8 +20,8 @@ let swordCore: Target = local
     ? .binaryTarget(name: "SwordCore", path: "build/SwordCore.xcframework")
     : .binaryTarget(
         name: "SwordCore",
-        url: "https://github.com/logoshub-org/SwordKit/releases/download/0.1.0/SwordCore.xcframework.zip",
-        checksum: "96ea9d83b706d4e24db4191e2ff3d269cfe391db8bf18e13f993a7238bbd4f02")
+        url: "https://github.com/logoshub-org/SwordKit/releases/download/0.1.1/SwordCore.xcframework.zip",
+        checksum: "485da0e0aaf446e84230b798a3030fd41f5460bdcb8114f6154dcc8114918b21")
 
 let cLucene: Target = local
     ? .binaryTarget(name: "CLucene", path: "build/CLucene.xcframework")
