@@ -4,6 +4,13 @@
 package org.logoshub.sword
 
 /** The facts about a module the readers need (the same as SwordProvider's SwordModuleInfo). */
+/** A module's facts from its handle: an installed module's, or the copy a source holds of one it offers. */
+internal fun infoOf(module: Long): SwordModuleInfo? {
+    val a = SwordNative.moduleInfo(module) ?: return null
+    return SwordModuleInfo(a[0], a[1] ?: "KJV", a[2], a[3], a[4], a[5], a[6], a[7],
+        a[8] == "1", a[9] == "1", a[10] == "1", a[11] == "1", a[12] == "1", a[13] == "1", a[14] == "1")
+}
+
 data class SwordModuleInfo(
     val sourceType: String?,
     val versification: String,
@@ -88,11 +95,7 @@ class SwordLibrary(val path: String) : AutoCloseable {
         if (module == 0L) null else body(module)
     }
 
-    fun info(name: String): SwordModuleInfo? = withModule(name) { m ->
-        val a = SwordNative.moduleInfo(m) ?: return@withModule null
-        SwordModuleInfo(a[0], a[1] ?: "KJV", a[2], a[3], a[4], a[5], a[6], a[7],
-            a[8] == "1", a[9] == "1", a[10] == "1", a[11] == "1", a[12] == "1", a[13] == "1", a[14] == "1")
-    }
+    fun info(name: String): SwordModuleInfo? = withModule(name) { infoOf(it) }
 
     fun configEntry(name: String, key: String): String? = withModule(name) { SwordNative.moduleConfigEntry(it, key) }
 

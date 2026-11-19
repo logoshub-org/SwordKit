@@ -15,6 +15,21 @@ data class SwordRemoteModule(
 }
 
 /**
+ * A module a refreshed source offers, read from the source's own copy of its conf: what a download screen shows before the module is
+ * installed (its markup, size, licence, About page). Valid only inside [SwordInstallManager.withRemoteModule]'s body, as the source's
+ * manager holds the module; keep the values, not this.
+ */
+class SwordRemoteModuleFacts internal constructor(private val module: Long, val info: SwordModuleInfo) {
+    /** Encrypted and offered without a key: it needs one to be read once installed (an installed copy may have been given one since). */
+    val locked: Boolean get() = info.cipherKey != null && info.cipherKey.isEmpty()
+
+    /** An entry of the module's conf ("SourceType", "InstallSize", "DataPath", "About"), or null when it has none. */
+    fun configEntry(key: String): String? = SwordNative.moduleConfigEntry(module, key)
+
+    fun hasFeature(feature: String): Boolean = SwordNative.moduleHasFeature(module, feature)
+}
+
+/**
  * SWORD's install manager. SWORD does the logic; the host does the HTTP: register a fetcher with [setHttpFetcher] before refreshing
  * a source or installing (HttpURLConnection or OkHttp; it reports progress and cancellation through the hooks it is given).
  */
@@ -64,6 +79,17 @@ class SwordInstallManager private constructor(private var handle: Long) : AutoCl
                 else -> SwordRemoteModule.Status.SAME
             })
         }
+    }
+
+    /**
+     * The facts of a module a refreshed source offers, for as long as [body] runs, or null when the source has no such module (or has not
+     * been refreshed). The same as the Swift API's `withRemoteFacts`.
+     */
+    fun <T> withRemoteModule(module: String, caption: String, body: (SwordRemoteModuleFacts) -> T): T? = synchronized(lock) {
+        val remote = SwordNative.installRemoteModule(handle, caption, module)
+        if (remote == 0L) return@synchronized null
+        val info = infoOf(remote) ?: return@synchronized null
+        body(SwordRemoteModuleFacts(remote, info))
     }
 
     /** Downloads and installs a module of a refreshed source into the library. 0 on success. */

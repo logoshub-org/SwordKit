@@ -36,6 +36,11 @@ Built without curl, BibleSync and bzip2 (the NDK has no libbz2; CrossWire's own 
   search, dictionary entries, versification, Unicode beyond the BMP across JNI, the fetch callback, source management) and eight of the
   fetcher (against a local HTTPS server: the bytes and progress, basic auth, 404/403/401, timeout, cancel, an untrusted certificate; and
   a real refresh of CrossWire's source, an install of KJV and a read of John 3 from it).
+- Done (after 0.1.0): `SwordInstallManager.withRemoteModule(module, caption) { facts -> … }`, the Kotlin side of the Swift API's
+  `withRemoteFacts`: a module a refreshed source offers, read from the source's copy of its conf before it is installed (`info`,
+  `configEntry`, `hasFeature`, `locked`), for a download screen's markup, size, licence and About page. Kotlin only, over the JNI's
+  `installRemoteModule`, which was already there. The real-install test checks it: KJV's `SourceType` is OSIS and it has a size, an
+  unknown module or source gives null, and the source's facts equal the installed copy's.
 - Done: arm64-v8a and x86_64. Both export the same 150 symbols (no CLucene), have 16 KB-aligned segments (Play requires it on newer
   targets) and are about 2.9 MB stripped (29 MB with debug info). x86_64 is built and checked, not run: the emulator here is arm64.
 - Done: `Tools/package_android_aar.sh <version>` builds both ABIs, strips them, and publishes `sword` and `sword-okhttp` as AARs to a
