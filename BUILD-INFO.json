@@ -1,6 +1,6 @@
 {
-  "swordkit": "0.1.1",
-  "built": "2026-11-19T13:45:38Z",
+  "swordkit": "0.1.2",
+  "built": "2026-11-23T00:29:11Z",
   "sword": { "version": "1.9.0.3981", "upstream": "git.crosswire.org/main/sword master a376e42 (2026-11-01)" },
   "built against clucene": {
     "version": "2.3.3.4",
@@ -10,5 +10,5 @@
   "xcode": "Xcode 26.3 Build version 17C529",
   "cmake": "cmake version 4.5.0",
   "deployment-target": "17.6",
-  "swordcore-zip-checksum": "485da0e0aaf446e84230b798a3030fd41f5460bdcb8114f6154dcc8114918b21"
+  "swordcore-zip-checksum": "bef4244f84b7b55bd276d6a4c85ece10a4d74706872d6d9666ba5534c36fe88d"
 }
