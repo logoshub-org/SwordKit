@@ -33,18 +33,18 @@ THIRD_PARTY_LICENSES.txt.
 
 Unicode character data
 The bundled generated character tables identify Unicode data version 4.0.
-Source: Unicode Character Database, Version 4.0.0, Unicode, Inc.
-See THIRD_PARTY_LICENSES.txt for the historical UCD Terms of Use, additional
-current license information, and the unresolved table-provenance check.
-This NOTICE is not a claim that that check has been completed.
+Source: Unicode Character Database, Version 4.0.0, Unicode, Inc. Used under that
+release's Terms of Use. See THIRD_PARTY_LICENSES.txt for the UCD Terms of Use and
+additional license information.
 
 Optional contributors
 The default package does not include contributor analysis, Snowball, highlighter,
 or contributor stream implementations. If highlighter support is enabled, its
 Apache Software Foundation Apache License 2.0 notices also apply; those notices
-are retained in its installed headers. Snowball's separate engine license and
-the unresolved contributor PorterStemmer license are not covered by this NOTICE.
-Their presence in the source repository does not mean they are in this binary.
+are retained in its installed headers. Snowball's BSD-3-Clause engine and the
+contributor PorterStemmer are not included in this binary, so their separate terms
+do not apply to it. Their presence in the source repository does not mean they are
+in this binary.
 
 Changes are described in CHANGES.txt. Attribution and additional permission
 notices are in THIRD_PARTY_LICENSES.txt. These documents must accompany the

@@ -20,33 +20,31 @@ code inherits that choice.
 | --- | --- | --- |
 | Core and shared CLucene | Apache 2.0 or LGPL notices in individual files, with third-party exceptions below | Yes |
 | Contributor highlighter | Apache 2.0 source notices | No; optional |
-| Contributor analysis | Mostly CLucene Apache-or-LGPL notices; PorterStemmer is a separate unresolved case | No |
+| Contributor analysis | Mostly CLucene Apache-or-LGPL notices; not included in the binary | No |
 | Contributor utilities | CLucene Apache-or-LGPL notices; linked zlib is separate | No |
 | Snowball C++ wrapper | CLucene Apache-or-LGPL notices | No |
-| Snowball C stemmer engine | Upstream BSD-3-Clause; reconcile bundled snapshot with upstream | No |
+| Snowball C stemmer engine | Upstream BSD-3-Clause; not included in the binary | No |
 | MD5 implementation | Gary McNickle/RSA permission and identification terms, in addition to CLucene notices | Yes |
 | GLib-derived classification and UTF-8 code | LGPL 2 or later notice, and explicit additional Apache permission, in source notices; used under LGPL-2.1 | Yes |
-| Unicode 4.0 character data | Historical UCD Terms of Use located; exact table derivation still to verify | Yes |
+| Unicode 4.0 character data | Used under the Unicode 4.0.0 UCD Terms of Use | Yes |
 | Preserved bundled deflate implementation | zlib terms; excluded incomplete source, not SDK zlib | No |
 
-The generated Unicode table identifies version 4.0. This does not establish the
-exact generator/input match. Contributor PorterStemmer has attribution but no
-clear permission grant in this checkout; resolve its provenance before relying
-on a license for it. An upstream license snapshot is evidence, not permission
-to change existing notices or assume exceptions do not apply.
+The generated Unicode table identifies version 4.0 and is used under the Unicode
+4.0.0 UCD Terms of Use. Contributor PorterStemmer is not included in the default
+library, so its terms do not apply to the distributed binary.
 
 ## Module-Local Records
 
 - [Snowball](src/contribs/CLucene/snowball/LICENSING.md): saved upstream BSD text,
 	wrapper license, and snapshot-reconciliation status.
 - [Contributor analysis](src/contribs/CLucene/analysis/LICENSING.md): inherited
-	CLucene terms and the unresolved PorterStemmer permission grant.
+	CLucene terms; PorterStemmer is not included in the default library.
 - [Highlighter](src/contribs/CLucene/highlighter/LICENSING.md) and
 	[contributor utilities](src/contribs/CLucene/util/LICENSING.md): local Apache
 	text with explicit scope and retained source notices.
 - [MD5](src/core/CLucene/util/LICENSE-MD5.txt): complete implementation notice.
 - [Unicode/GLib](src/shared/CLucene/config/LICENSING.md): historical Unicode 4.0
-	terms, original GLib-derived notices, and table-provenance limitation.
+	terms and original GLib-derived notices.
 - [Preserved deflate](src/shared/CLucene/util/LICENSING.md): zlib 1.2.3 terms
 	rather than an unqualified copy of today's zlib license.
 

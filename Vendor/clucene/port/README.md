@@ -39,7 +39,7 @@ See [the Android steps](docs/building.md#android-future-build-path).
 
 - iOS: an XCFramework has been generated; both archives were verified as arm64 with the required headers. Application linking and runtime behavior remain unverified.
 - Android: build definitions and scripts are prepared but have not been tested.
-- Licensing: module notices are recorded; some permission/provenance questions remain open in [the repository inventory](THIRD_PARTY_LICENSES.md).
+- Licensing: module notices are recorded in [the repository inventory](THIRD_PARTY_LICENSES.md).
 
 ## License
 

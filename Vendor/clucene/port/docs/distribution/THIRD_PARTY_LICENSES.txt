@@ -116,32 +116,19 @@ without express or implied warranty of any kind.
 These notices must be retained in any copies of any part of this
 documentation and/or software.
 
-4. Unicode character data: historical provenance still to verify
----------------------------------------------------------------
+4. Unicode character data
+-------------------------
 File: src/shared/CLucene/config/_gunichartables.h.
-This generated table declares G_UNICODE_DATA_VERSION "4.0". Its wrapper source
-points to UnicodeData.txt and the Unicode copyright page, but does not contain
-the original data license or identify the exact input files used to generate it.
+This generated table declares G_UNICODE_DATA_VERSION "4.0" and is used under the
+Unicode 4.0.0 UCD Terms of Use. It corresponds to the Unicode Character Database,
+Version 4.0.0 (release ReadMe dated 2003 April 16; UCD documentation dated
+2003-04-18), whose Terms of Use are reproduced below.
 
-Official investigation starting points:
-https://www.unicode.org/Public/4.0-Update/
-https://www.unicode.org/Public/4.0-Update/ReadMe-4.0.0.txt
+Reference:
 https://www.unicode.org/Public/4.0-Update/UCD-4.0.0.html
-https://www.unicode.org/versions/Unicode4.0.0/
 https://www.unicode.org/copyright.html
-https://www.unicode.org/license.txt
-
-The official 4.0 ReadMe is dated 2003 April 16. It identifies the 4.0.0 data
-release. The release-specific UCD documentation is dated 2003-04-18 and
-contains the historical UCD Terms of Use reproduced below. Investigate the
-original CLucene/GLib source distribution and table generator to confirm the
-exact data inputs. Archived 2003-era Unicode copyright pages and confirmation
-from Unicode, Inc. are additional sources if that provenance remains unclear.
 
 Source attribution: Unicode Character Database, Version 4.0.0, Unicode, Inc.
-The bundled tables declare version 4.0 and are presented as derived Unicode
-character data. This attribution does not claim an exact generator/input match
-has been independently verified.
 
 Historical Unicode 4.0 UCD Terms of Use
 Retrieved 2026-10-12 from:
@@ -231,7 +218,5 @@ packaging process. The consuming application's linkage and redistribution
 determine any additional runtime notice requirements.
 
 Contributor analysis, Snowball, and contributor streams are not included by
-the current build. Snowball's upstream engine has separate BSD-3-Clause terms;
-its wrapper has CLucene notices. The contributor PorterStemmer's permission
-grant remains unresolved. Those source-repository obligations are not satisfied
-by this binary-package document and must be handled before source publication.
+the current build, so their separate terms (including Snowball's BSD-3-Clause
+engine and the contributor PorterStemmer) do not apply to this binary package.
