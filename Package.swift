@@ -48,6 +48,8 @@ let package = Package(
             // SWORD and CLucene need the system's ICU, C++ library, zlib and bzip2
             linkerSettings: [.linkedLibrary("icucore"), .linkedLibrary("c++"), .linkedLibrary("z"), .linkedLibrary("bz2")]
         ),
+        // Swift-only checks of the API that need no modules (the About page's fields); run on an iOS simulator.
+        .testTarget(name: "SwordProviderTests", dependencies: ["SwordProvider"]),
     ],
     swiftLanguageModes: [.v5]
 )
